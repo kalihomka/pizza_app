@@ -8,14 +8,12 @@ import os
 window = tk.Tk()
 window.title("Pizza App")
 window.state("zoomed")
-
 def load_image(path, width, height):
     img = Image.open(path)
     img = img.resize((width, height))
     return ImageTk.PhotoImage(img)
-
 #images
-ham_pizza_img = load_image("images/image(1).png", 100, 100)
+ham_pizza_img = load_image("images/image(1).png", 100, 100)#adjust the height of the imgaes here
 veg_pizza_img = load_image("images/image(2).png", 100, 100)
 cheese_pizza_img = load_image("images/image(3).png", 100, 100)
 meat_pizza_img = load_image("images/image(4).png", 100, 100)
@@ -40,19 +38,15 @@ pizza_data = {
     "Spicy Jalapeno Pizza": {"desc": "Ricotta, mozzarella, and a drizzle of olive oil, baked to perfection.", "image": spicy_img, "price": 11},
     "Marinara": {"desc": "Savory tomato sauce, garlic, oregano \nand a hint of olive oil, baked with love.", "image": marg_pizza_img, "price": 16},
 }
-
 deal_pizza = random.choice(list(pizza_data.keys()))
 deal_text = f"Deal of the Day: Buy 1 Get 1 Free on {deal_pizza}!"
-
-# cart
-cart = []
+cart = []#the cart
 cart_total = tk.DoubleVar(value=0.0)
-
 def add_to_cart(pizza_name, price, customizations=""):
     item_text = f"{pizza_name} {customizations} - ${price:.2f}"
     if pizza_name == deal_pizza:
         cart.append({"text": item_text, "price": price})
-        cart.append({"text": item_text + " (free)", "price": 0})
+        cart.append({"text": item_text + " (fre)", "price": 0})
         cart_listbox.insert(END, item_text)
         cart_listbox.insert(END, item_text + " (free)")
         cart_total.set(cart_total.get() + price)
@@ -60,7 +54,6 @@ def add_to_cart(pizza_name, price, customizations=""):
         cart.append({"text": item_text, "price": price})
         cart_listbox.insert(END, item_text)
         cart_total.set(cart_total.get() + price)
-
 def remove_cart_item(event):
     try:
         selected_index = cart_listbox.curselection()[0]
@@ -69,19 +62,16 @@ def remove_cart_item(event):
     item = cart.pop(selected_index)
     cart_listbox.delete(selected_index)
     cart_total.set(cart_total.get() - item["price"])
-
 # theme idk if we will keep it
 def apply_theme(theme_name):
     pass
-
+#no themes fo now
 # Pizza customization
 def customize_pizza(pizza_name, base_price):
     top = Toplevel(window)
     top.title(f"Customize {pizza_name}")
     top.geometry("400x600")
-
     Label(top, text=f"Customize {pizza_name}", font=("Arial", 16, "bold")).pack(pady=10)
-
     # size
     Label(top, text="Choose Size:", font=("Arial", 12)).pack(anchor="w", padx=10)
     size_var = StringVar(value="Medium")
@@ -91,22 +81,19 @@ def customize_pizza(pizza_name, base_price):
     # Crust
     Label(top, text="Choose Crust:", font=("Arial", 12)).pack(anchor="w", padx=10, pady=(10,0))
     crust_var = StringVar(value="Regular")
-    for crust in ["Regular", "Thin", "Cheese Burst (+$2)"]:
+    for crust in ["Regular", "Thin", "Cheese stuffed"]:
         Radiobutton(top, text=crust, variable=crust_var, value=crust).pack(anchor="w", padx=20)
-
     # Toppings
-    Label(top, text="Extra Toppings ($1 each):", font=("Arial", 12)).pack(anchor="w", padx=10, pady=(10,0))
+    Label(top, text="Extra Toppings:", font=("Arial", 12)).pack(anchor="w", padx=10, pady=(10,0))
     topping_vars = {}
     for topping in ["Mushrooms", "Olives", "Peppers", "Onions", "Bacon","Extra Sauce"]:
         var = BooleanVar()
         Checkbutton(top, text=topping, variable=var).pack(anchor="w", padx=20)
         topping_vars[topping] = var
-
     # Slices
     Label(top, text="Number of Slices:", font=("Arial", 12)).pack(anchor="w", padx=10, pady=(10,0))
     slices_var = IntVar(value=8)
     Spinbox(top, from_=1, to=8, textvariable=slices_var).pack(anchor="w", padx=20)
-
     def confirm_customization():
         final_price = base_price
         size_choice = size_var.get()
@@ -126,9 +113,7 @@ def customize_pizza(pizza_name, base_price):
         add_to_cart(pizza_name, final_price, custom_text)
         top.destroy()
         messagebox.showinfo("Pizza Customized", f"{pizza_name} added to cart with customizations!")
-
     Button(top, text="Add to Cart", command=confirm_customization).pack(pady=20)
-
 # the layout
 main_frame = Frame(window)
 main_frame.pack(fill="both", expand=True)
@@ -136,7 +121,6 @@ left_frame = Frame(main_frame)
 left_frame.pack(side="left", fill="both", expand=True)
 right_frame = Frame(main_frame, width=400, bd=2, relief="sunken")
 right_frame.pack(side="right", fill="y")
-
 # Search bar
 search_var = StringVar()
 search_entry = Entry(left_frame, textvariable=search_var, font=("Arial", 12))
@@ -149,7 +133,6 @@ canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
 scroll_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
 canvas.pack(side="left", fill="both", expand=True)
 scrollbar.pack(side="right", fill="y")
-
 # show the pizzas
 def show_pizzas(pizzas):
     for widget in scroll_frame.winfo_children():
@@ -180,18 +163,15 @@ def show_pizzas(pizzas):
                command=lambda n=pizza_name, p=pizza["price"]: add_to_cart(n, p)).pack(side="left", padx=5)
         Button(btn_frame, text="Customize",
                command=lambda n=pizza_name, p=pizza["price"]: customize_pizza(n, p)).pack(side="left", padx=5)
-
 def update_display(*args):
     search_term = search_var.get().strip().lower()
     matching_pizzas = [name for name in pizza_data if search_term in name.lower()] if search_term else list(pizza_data.keys())
     show_pizzas(matching_pizzas)
 search_var.trace("w", update_display)
-
 # randomizes the deal of the day
 deal_frame = Frame(right_frame, pady=10, padx=10, bd=2, relief="ridge")
 deal_frame.pack(fill="x", pady=10, padx=10)
 Label(deal_frame, text=deal_text, font=("Arial", 14, "bold"), fg="red").pack()
-
 # cart panel
 cart_frame = Frame(right_frame, bd=2, relief="sunken", pady=5)
 cart_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -206,7 +186,6 @@ def checkout():
     if not cart:
         messagebox.showwarning("Cart Empty", "Your cart is empty!")
         return
-
     top = Toplevel(window)
     top.title("Checkout")
     top.state("zoomed")
@@ -221,18 +200,15 @@ def checkout():
     canvas.configure(yscrollcommand=scrollbar.set)
     canvas.pack(side="left", fill="both", expand=True)
     scrollbar.pack(side="right", fill="y")
-
     # Display cart items
     for item in cart:
         Label(scroll_frame, text=item["text"], font=("Arial", 12)).pack(anchor="w", pady=2)
-
     # Total price
     Label(top, text=f"Total: ${cart_total.get():.2f}", font=("Arial", 14, "bold"), fg="green").pack(pady=10)
-    # generate order ID
     order_id = f"ORD{random.randint(1000,9999)}"
     Label(top, text=f"Order ID: {order_id}", font=("Arial", 12, "bold")).pack(pady=5)
     def confirm_order():
-        log_file = r"C:\Users\Fedor\OneDrive\Desktop\Other\Code\logs\logs.txt"
+        log_file = r".venv/logs/logs.txt"
         os.makedirs(os.path.dirname(log_file), exist_ok=True)
         with open(log_file, "a") as f:
             f.write(f"Order ID: {order_id}\n")
@@ -240,15 +216,12 @@ def checkout():
                 f.write(f"{item['text']}\n")
             f.write(f"Total: ${cart_total.get():.2f}\n")
             f.write("-" * 40 + "\n")
-
         messagebox.showinfo("Order Placed", f"Your order {order_id} has been placed")
         top.destroy()
         cart.clear()
         cart_listbox.delete(0, END)
         cart_total.set(0.0)
-
     Button(top, text="Confirm Order", font=("Arial", 12, "bold"), command=confirm_order).pack(pady=20)
-# Checkout button
 Button(cart_frame, text="Checkout", font=("Arial", 12, "bold"), command=checkout).pack(pady=10)
 # show all pizzas initially
 show_pizzas(list(pizza_data.keys()))
