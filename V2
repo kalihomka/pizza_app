@@ -1,0 +1,481 @@
+from tkinter import *
+import tkinter as tk
+from tkinter import messagebox
+from PIL import Image, ImageTk
+import random
+import os
+
+class PizzaApp:
+    def __init__(self):
+        self.window = tk.Tk()
+        self.window.title("Pizza App")
+        self.window.state("zoomed")
+        
+        self.cart = []
+        self.cart_total = tk.DoubleVar(value=0.0)
+        self.cart_items = {}  # Track quantities for stacking
+        
+        self.setup_images()
+        self.setup_pizza_data()
+        self.create_widgets()
+        self.show_pizzas(list(self.pizza_data.keys()))
+        
+    def setup_images(self):
+        def load_image(path, width, height):
+            img = Image.open(path)
+            img = img.resize((width, height))
+            return ImageTk.PhotoImage(img)
+            
+        self.ham_pizza_img = load_image("images/image(1).png", 100, 100)
+        self.veg_pizza_img = load_image("images/image(2).png", 100, 100)
+        self.cheese_pizza_img = load_image("images/image(3).png", 100, 100)
+        self.meat_pizza_img = load_image("images/image(4).png", 100, 100)
+        self.huwain_pizza_img = load_image("images/image(5).png", 100, 100)
+        self.diavola_pizza_img = load_image("images/image(6).png", 100, 100)
+        self.supreme_pizza_img = load_image("images/image(7).png", 100, 100)
+        self.mushroom_pizza_img = load_image("images/image(8).png", 100, 100)
+        self.spicy_img = load_image("images/image(9).png", 100, 100)
+        self.four_cheese_pizza_img = load_image("images/image(11).png", 100, 100)
+        self.marg_pizza_img = load_image("images/image(10).png", 100, 100)
+    
+    def setup_pizza_data(self):
+        self.pizza_data = {
+            "Margharita Pizza": {"desc": "A perfect harmony of fresh tomato sauce \ncreamy mozzarella, and fragrant basil, baked to perfection.", "image": self.ham_pizza_img, "price": 8},
+            "Diavola": {"desc": "Topped with spicy Italian salami, mozzarella \nand a rich tomato sauce, this pizza packs a fiery punch in every bite.", "image": self.veg_pizza_img, "price": 10},
+            "Vegetariana": {"desc": "Topped with fresh vegetables and mozzarella\nfor a healthy, flavorful option.", "image": self.cheese_pizza_img, "price": 12},
+            "Quattro Formaggi": {"desc": "A decadent blend of four cheeses – mozzarella \ngorgonzola, parmesan, and fontina.", "image": self.cheese_pizza_img, "price": 14},
+            "Pollo alla Griglia": {"desc": "Grilled chicken with cheese and tomato sauce.", "image": self.meat_pizza_img, "price": 9},
+            "Carnivora": {"desc": "Loaded with pepperoni, ham, sausage\nand bacon over a luscious tomato base and mozzarella.", "image": self.huwain_pizza_img, "price": 11},
+            "Capricciosa": {"desc": "Ham, mushrooms, artichokes, olives \nand mozzarella come together in a flavor-packed pizza.", "image": self.diavola_pizza_img, "price": 13},
+            "Pollo Piccante": {"desc": "Spicy chicken, hot chili peppers, and mozzarella.", "image": self.supreme_pizza_img, "price": 15},
+            "Prosciutto e Ananas": {"desc": "Thin slices of prosciutto paired with juicy pineapple,\nmozzarella, and tomato sauce.", "image": self.mushroom_pizza_img, "price": 12},
+            "Spicy Jalapeno Pizza": {"desc": "Ricotta, mozzarella, and a drizzle of olive oil, baked to perfection.", "image": self.spicy_img, "price": 11},
+            "Marinara": {"desc": "Savory tomato sauce, garlic, oregano \nand a hint of olive oil, baked with love.", "image": self.marg_pizza_img, "price": 16},
+        }
+        
+        self.deal_pizza = random.choice(list(self.pizza_data.keys()))
+        self.deal_text = f"Deal of the Day: Buy 1 Get 1 Free on {self.deal_pizza}!"
+    
+    def create_widgets(self):
+        # Main layout
+        main_frame = Frame(self.window)
+        main_frame.pack(fill="both", expand=True)
+        
+        # Left frame - Pizza display
+        left_frame = Frame(main_frame)
+        left_frame.pack(side="left", fill="both", expand=True)
+        
+        # Right frame - Cart
+        right_frame = Frame(main_frame, width=400, bd=2, relief="sunken")
+        right_frame.pack(side="right", fill="y")
+        right_frame.pack_propagate(False)
+        
+        # Search bar
+        self.search_var = StringVar()
+        search_entry = Entry(left_frame, textvariable=self.search_var, font=("Arial", 12))
+        search_entry.pack(pady=10)
+        
+        # Scrollable canvas for pizzas - ORIGINAL SCROLLING CODE
+        self.canvas = Canvas(left_frame)
+        self.scrollbar = Scrollbar(left_frame, orient="vertical", command=self.canvas.yview)
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+        self.scroll_frame = Frame(self.canvas)
+        self.scroll_window = self.canvas.create_window((0, 0), window=self.scroll_frame, anchor="nw")
+        
+        def resize_canvas(event):
+            self.canvas.itemconfig(self.scroll_window, width=event.width)
+        self.canvas.bind("<Configure>", resize_canvas)
+        self.scroll_frame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
+        
+        self.canvas.pack(side="left", fill="both", expand=True)
+        self.scrollbar.pack(side="right", fill="y")
+        
+        # ORIGINAL SMOOTH SCROLLING CODE
+        scroll_accumulator = 0
+        scroll_speed = 0.002
+
+        def on_mousewheel(event):
+            nonlocal scroll_accumulator
+            delta = 0
+            if event.num == 4:  # Linux scroll up
+                delta = -1
+            elif event.num == 5:  # Linux scroll down
+                delta = 1
+            elif hasattr(event, "delta"):  # Windows / macOS
+                delta = -event.delta
+
+            scroll_accumulator += delta * scroll_speed
+            new_pos = self.canvas.yview()[0] + scroll_accumulator
+            if new_pos < 0:
+                new_pos = 0
+            elif new_pos > 1:
+                new_pos = 1
+
+            self.canvas.yview_moveto(new_pos)
+            scroll_accumulator *= 0
+
+        # Bindings for all platforms
+        for widget in (left_frame, self.canvas, self.scroll_frame):
+            widget.bind_all("<MouseWheel>", on_mousewheel)
+            widget.bind_all("<Button-4>", on_mousewheel)
+            widget.bind_all("<Button-5>", on_mousewheel)
+        
+        # Deal frame
+        deal_frame = Frame(right_frame, pady=10, padx=10, bd=2, relief="ridge")
+        deal_frame.pack(fill="x", pady=10, padx=10)
+        Label(deal_frame, text=self.deal_text, font=("Arial", 13, "bold"), fg="red").pack()
+        
+        # Cart frame
+        self.cart_frame = Frame(right_frame, bd=2, relief="sunken", pady=5)
+        self.cart_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        Label(self.cart_frame, text="Shopping Cart", font=("Arial", 14, "bold")).pack(anchor="w")
+        
+        # Cart items frame with scrollbar - NO WHITE BAR
+        self.cart_listbox = Listbox(self.cart_frame, height=15)
+        self.cart_listbox.pack(fill="both", expand=True, padx=10, pady=5)
+        
+        # Total frame
+        total_frame = Frame(self.cart_frame)
+        total_frame.pack(fill="x", padx=10, pady=5)
+        
+        Label(total_frame, text="Total:", font=("Arial", 12, "bold")).pack(side="left")
+        Label(total_frame, textvariable=self.cart_total, font=("Arial", 16, "bold"), fg="green").pack(side="right")
+        
+        # Cart buttons frame
+        cart_btn_frame = Frame(self.cart_frame)
+        cart_btn_frame.pack(pady=5)
+        
+        Button(cart_btn_frame, text="Remove Selected", command=self.remove_selected).pack(side="left", padx=5)
+        Button(cart_btn_frame, text="Edit Selected", command=self.edit_selected).pack(side="left", padx=5)
+        
+        Button(self.cart_frame, text="Checkout", font=("Arial", 12, "bold"), command=self.checkout).pack(pady=10)
+        
+        # Bind search
+        self.search_var.trace("w", self.update_display)
+    
+    def show_pizzas(self, pizzas):
+        for widget in self.scroll_frame.winfo_children():
+            widget.destroy()
+            
+        if not pizzas:
+            Label(self.scroll_frame, text="No pizzas found!", font=("Arial", 16)).pack(pady=20)
+            return
+            
+        for pizza_name in pizzas:
+            pizza = self.pizza_data[pizza_name]
+            frame = Frame(self.scroll_frame, pady=10, padx=10, relief="raised", bd=2)
+            frame.pack(fill="x", pady=5, padx=10)
+            frame.grid_columnconfigure(0, weight=1)
+            frame.grid_columnconfigure(1, weight=3)
+            
+            Label(frame, text=pizza_name, font=("Arial", 16, "bold")).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0,5))
+            Label(frame, image=pizza["image"]).grid(row=1, column=0, sticky="nsew")
+            
+            desc_label = Label(frame, text=pizza["desc"], font=("Arial", 12), justify="left")
+            desc_label.grid(row=1, column=1, sticky="nsew", padx=10)
+            
+            frame.update_idletasks()
+            col_width = frame.grid_bbox(column=1)[2]
+            desc_label.config(wraplength=col_width)
+            
+            btn_frame = Frame(frame)
+            btn_frame.grid(row=2, column=0, columnspan=2, pady=5, sticky="ew")
+            
+            Button(btn_frame, text=f"Add to Cart (${pizza['price']})",
+                   command=lambda n=pizza_name, p=pizza["price"]: self.add_to_cart(n, p)).pack(side="left", padx=5)
+            Button(btn_frame, text="Customize",
+                   command=lambda n=pizza_name, p=pizza["price"]: self.customize_pizza(n, p)).pack(side="left", padx=5)
+    
+    def update_display(self, *args):
+        search_term = self.search_var.get().strip().lower()
+        matching_pizzas = [name for name in self.pizza_data if search_term in name.lower()] if search_term else list(self.pizza_data.keys())
+        self.show_pizzas(matching_pizzas)
+    
+    def add_to_cart(self, pizza_name, price, customizations=""):
+        # Create item key for stacking
+        item_key = f"{pizza_name}_{customizations}"
+        
+        if item_key in self.cart_items:
+            # Stack existing item
+            self.cart_items[item_key]["quantity"] += 1
+        else:
+            # Add new item
+            self.cart_items[item_key] = {
+                "name": pizza_name,
+                "customizations": customizations,
+                "price": price,
+                "quantity": 1,
+                "original_price": price  # Store original price for editing
+            }
+        
+        self.update_cart_display()
+    
+    def update_cart_display(self):
+        # Clear cart display
+        self.cart_listbox.delete(0, END)
+        
+        total = 0.0
+        self.cart = []  # Rebuild cart list
+        
+        for item_key, item_data in self.cart_items.items():
+            quantity = item_data["quantity"]
+            price_per_item = item_data["price"]
+            
+            # Handle deal pricing
+            if item_data["name"] == self.deal_pizza:
+                paid_items = (quantity + 1) // 2
+                free_items = quantity - paid_items
+                item_total = paid_items * price_per_item
+            else:
+                item_total = quantity * price_per_item
+                free_items = 0
+            
+            # Create display text
+            display_text = f"{item_data['name']}"
+            if item_data['customizations']:
+                display_text += f" {item_data['customizations']}"
+            if quantity > 1:
+                display_text += f" (x{quantity})"
+            if free_items > 0:
+                display_text += f" - {free_items} free"
+            display_text += f" - ${item_total:.2f}"
+            
+            self.cart_listbox.insert(END, display_text)
+            self.cart.append({
+                "key": item_key,
+                "text": display_text, 
+                "price": item_total,
+                "data": item_data
+            })
+            total += item_total
+        
+        # Update total
+        self.cart_total.set(total)
+    
+    def remove_selected(self):
+        try:
+            index = self.cart_listbox.curselection()[0]
+        except IndexError:
+            return
+        
+        item = self.cart[index]
+        item_key = item["key"]
+        
+        if self.cart_items[item_key]["quantity"] > 1:
+            # Remove one quantity
+            self.cart_items[item_key]["quantity"] -= 1
+        else:
+            # Remove entire item
+            del self.cart_items[item_key]
+        
+        self.update_cart_display()
+    
+    def edit_selected(self):
+        try:
+            index = self.cart_listbox.curselection()[0]
+        except IndexError:
+            messagebox.showwarning("No Selection", "Please select a pizza to edit.")
+            return
+        
+        item = self.cart[index]
+        item_key = item["key"]
+        item_data = self.cart_items[item_key]
+        
+        # Open edit with current customizations
+        self.customize_pizza_with_options(
+            item_data["name"], 
+            item_data["original_price"], 
+            item_data["customizations"],
+            item_key
+        )
+    
+    def customize_pizza_with_options(self, pizza_name, base_price, current_customizations, item_key=None):
+        top = Toplevel(self.window)
+        top.title(f"Customize {pizza_name}")
+        top.geometry("400x600")
+
+        Label(top, text=f"Customize {pizza_name}", font=("Arial", 16, "bold")).pack(pady=10)
+
+        # Parse current customizations
+        current_options = self.parse_customizations(current_customizations)
+
+        # Size - pre-select current
+        Label(top, text="Choose Size:", font=("Arial", 12)).pack(anchor="w", padx=10)
+        size_var = StringVar(value=current_options["size"])
+        size_prices = {"Small": -2, "Medium": 0, "Large": 6}
+        for size in size_prices:
+            Radiobutton(top, text=f"{size} (+${size_prices[size]})", variable=size_var, value=size).pack(anchor="w", padx=20)
+
+        # Crust - pre-select current
+        Label(top, text="Choose Crust:", font=("Arial", 12)).pack(anchor="w", padx=10, pady=(10,0))
+        crust_var = StringVar(value=current_options["crust"])
+        for crust in ["Regular", "Thin", "Cheese Burst (+$2)"]:
+            Radiobutton(top, text=crust, variable=crust_var, value=crust).pack(anchor="w", padx=20)
+
+        # Toppings - pre-check current
+        Label(top, text="Extra Toppings ($1 each):", font=("Arial", 12)).pack(anchor="w", padx=10, pady=(10,0))
+        topping_vars = {}
+        for topping in ["Mushrooms", "Olives", "Peppers", "Onions", "Bacon", "Extra Sauce"]:
+            var = BooleanVar(value=(topping in current_options["toppings"]))
+            Checkbutton(top, text=topping, variable=var).pack(anchor="w", padx=20)
+            topping_vars[topping] = var
+
+        # Slices - pre-set current
+        Label(top, text="Number of Slices:", font=("Arial", 12)).pack(anchor="w", padx=10, pady=(10,0))
+        slices_var = IntVar(value=current_options["slices"])
+        Spinbox(top, from_=1, to=8, textvariable=slices_var).pack(anchor="w", padx=20)
+
+        def confirm_customization():
+            final_price = base_price
+            size_choice = size_var.get()
+            final_price += size_prices[size_choice]
+            crust_choice = crust_var.get()
+            if "Cheese Burst" in crust_choice:
+                final_price += 2
+            chosen_toppings = [t for t, v in topping_vars.items() if v.get()]
+            if chosen_toppings:
+                final_price += len(chosen_toppings)
+            num_slices = slices_var.get()
+            final_price = final_price * (num_slices / 8)
+            
+            custom_text = f"({size_choice}, {crust_choice}"
+            if chosen_toppings:
+                custom_text += ", " + ", ".join(chosen_toppings)
+            custom_text += f", {num_slices} slices)"
+            
+            if item_key:
+                # Update existing item
+                self.cart_items[item_key]["customizations"] = custom_text
+                self.cart_items[item_key]["price"] = final_price
+            else:
+                # Add new item
+                self.add_to_cart(pizza_name, final_price, custom_text)
+            
+            top.destroy()
+            self.update_cart_display()
+            messagebox.showinfo("Pizza Customized", f"{pizza_name} updated in cart!")
+
+        Button(top, text="Update Cart", command=confirm_customization).pack(pady=20)
+    
+    def parse_customizations(self, customizations):
+        options = {
+            "size": "Medium",
+            "crust": "Regular", 
+            "toppings": [],
+            "slices": 8
+        }
+        
+        if not customizations:
+            return options
+            
+        # Extract size
+        if "(Small," in customizations:
+            options["size"] = "Small"
+        elif "(Large," in customizations:
+            options["size"] = "Large"
+            
+        # Extract crust
+        if "Cheese Burst" in customizations:
+            options["crust"] = "Cheese Burst"
+        elif "Thin" in customizations:
+            options["crust"] = "Thin"
+            
+        # Extract toppings
+        if "Toppings:" in customizations:
+            toppings_part = customizations.split("Toppings: ")[1].split(")")[0]
+            options["toppings"] = [t.strip() for t in toppings_part.split(",")]
+        elif "," in customizations and "slices" not in customizations.split(",")[1]:
+            # Handle case where toppings are listed without "Toppings:" label
+            parts = customizations.split(",")
+            if len(parts) > 2:
+                toppings = parts[2:-1] if "slices" in parts[-1] else parts[2:]
+                options["toppings"] = [t.strip() for t in toppings]
+            
+        # Extract slices
+        if "slices" in customizations:
+            try:
+                slices_part = customizations.split(",")[-1].strip()
+                options["slices"] = int(slices_part.split(" ")[0])
+            except:
+                options["slices"] = 8
+                
+        return options
+    
+    def customize_pizza(self, pizza_name, base_price):
+        self.customize_pizza_with_options(pizza_name, base_price, "")
+    
+    def checkout(self):
+        if not self.cart_items:
+            messagebox.showwarning("Cart Empty", "Your cart is empty!")
+            return
+
+        top = Toplevel(self.window)
+        top.title("Checkout")
+        top.state("zoomed")
+
+        Label(top, text="Order Summary", font=("Arial", 16, "bold")).pack(pady=10)
+
+        # Delivery location
+        location_var = StringVar()
+        location_frame = Frame(top)
+        location_frame.pack(pady=10)
+        Label(location_frame, text="Delivery Location:", font=("Arial", 12)).pack(side="left", padx=5)
+        Entry(location_frame, textvariable=location_var, width=50, font=("Arial", 12)).pack(side="left", padx=5)
+
+        # Order summary with prices
+        order_frame = Frame(top)
+        order_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        canvas = Canvas(order_frame)
+        scrollbar = Scrollbar(order_frame, orient="vertical", command=canvas.yview)
+        scroll_frame = Frame(canvas)
+        canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        scroll_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+
+        # Display cart items with prices
+        for item in self.cart:
+            item_frame = Frame(scroll_frame)
+            item_frame.pack(fill="x", pady=2)
+            
+            Label(item_frame, text=item["text"], font=("Arial", 12), anchor="w").pack(side="left", fill="x", expand=True)
+
+        # Total and order ID
+        Label(top, text=f"Total: ${self.cart_total.get():.2f}", font=("Arial", 14, "bold"), fg="green").pack(pady=10)
+        order_id = f"ORD{random.randint(1000,9999)}"
+        Label(top, text=f"Order ID: {order_id}", font=("Arial", 12, "bold")).pack(pady=5)
+
+        def confirm_order():
+            location = location_var.get().strip()
+            if not location:
+                messagebox.showwarning("Missing Location", "Please enter a delivery location.")
+                return
+
+            os.makedirs("orders", exist_ok=True)
+            with open("orders/order_log.txt", "a") as f:
+                f.write(f"Order ID: {order_id}\n")
+                f.write(f"Delivery Location: {location}\n")
+                for item in self.cart:
+                    f.write(f"{item['text']}\n")
+                f.write(f"Total: ${self.cart_total.get():.2f}\n")
+                f.write("-"*40 + "\n")
+
+            messagebox.showinfo("Order Placed", f"Your order {order_id} has been placed")
+            top.destroy()
+            self.cart_items.clear()
+            self.update_cart_display()
+
+        btn_frame = Frame(top)
+        btn_frame.pack(pady=20)
+        Button(btn_frame, text="Confirm Order", font=("Arial", 12, "bold"), command=confirm_order).pack(side="left", padx=10)
+        Button(btn_frame, text="Back", font=("Arial", 12, "bold"), command=top.destroy).pack(side="left", padx=10)
+    
+    def run(self):
+        self.window.mainloop()
+
+if __name__ == "__main__":
+    app = PizzaApp()
+    app.run()
